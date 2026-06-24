@@ -19,7 +19,10 @@ backend/
   models/        PostgreSQL queries
   routes/        API routes
 frontend/
-  src/           React app and styles
+  src/
+    components/ Reusable React UI components
+    services/   Axios API calls
+    constants/  Shared task status values
 ```
 
 ## Setup
@@ -71,5 +74,5 @@ http://localhost:5001/api/tasks
 ## Notes
 
 - The backend creates the `tasks` table automatically when the server starts.
-- The frontend uses the backend API only. There is no hardcoded task data.
+- The frontend uses Axios in `frontend/src/services/taskApi.js`. There is no hardcoded task data.
 - Run `npm run build` to create a production frontend build in `dist/`.

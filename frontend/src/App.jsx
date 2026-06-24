@@ -1,16 +1,18 @@
 import { useEffect, useState } from "react";
-
-const statuses = ["To Do", "In Progress", "Done"];
-
-const emptyForm = {
-  title: "",
-  description: "",
-  status: "To Do"
-};
+import Header from "./components/Header";
+import TaskForm from "./components/TaskForm";
+import TaskList from "./components/TaskList";
+import { EMPTY_TASK_FORM } from "./constants/statuses";
+import {
+  createTask,
+  deleteTask as deleteTaskRequest,
+  getTasks,
+  updateTaskStatus
+} from "./services/taskApi";
 
 function App() {
   const [tasks, setTasks] = useState([]);
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState(EMPTY_TASK_FORM);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -18,13 +20,7 @@ function App() {
   const fetchTasks = async () => {
     try {
       setError("");
-      const response = await fetch("/api/tasks");
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Could not load tasks");
-      }
-
+      const data = await getTasks();
       setTasks(data);
     } catch (err) {
       setError(err.message);
@@ -50,19 +46,9 @@ function App() {
     setError("");
 
     try {
-      const response = await fetch("/api/tasks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form)
-      });
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Could not add task");
-      }
-
+      const data = await createTask(form);
       setTasks([data, ...tasks]);
-      setForm(emptyForm);
+      setForm(EMPTY_TASK_FORM);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -73,17 +59,7 @@ function App() {
   const changeStatus = async (taskId, status) => {
     try {
       setError("");
-      const response = await fetch(`/api/tasks/${taskId}/status`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status })
-      });
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Could not update task");
-      }
-
+      const data = await updateTaskStatus(taskId, status);
       setTasks(tasks.map((task) => (task.id === taskId ? data : task)));
     } catch (err) {
       setError(err.message);
@@ -93,15 +69,7 @@ function App() {
   const deleteTask = async (taskId) => {
     try {
       setError("");
-      const response = await fetch(`/api/tasks/${taskId}`, {
-        method: "DELETE"
-      });
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Could not delete task");
-      }
-
+      await deleteTaskRequest(taskId);
       setTasks(tasks.filter((task) => task.id !== taskId));
     } catch (err) {
       setError(err.message);
@@ -110,103 +78,18 @@ function App() {
 
   return (
     <main className="page">
-      <section className="header">
-        <div>
-          <p className="eyebrow">Simple CRUD App</p>
-          <h1>Task Manager</h1>
-        </div>
-        <div className="countBox">
-          <span>{tasks.length}</span>
-          <small>Total Tasks</small>
-        </div>
-      </section>
+      <Header totalTasks={tasks.length} />
 
       <section className="layout">
-        <form className="taskForm" onSubmit={handleSubmit}>
-          <h2>Add Task</h2>
-
-          <label htmlFor="title">Title</label>
-          <input
-            id="title"
-            name="title"
-            value={form.title}
-            onChange={handleChange}
-            placeholder="Enter task title"
-            required
-          />
-
-          <label htmlFor="description">Description</label>
-          <textarea
-            id="description"
-            name="description"
-            value={form.description}
-            onChange={handleChange}
-            placeholder="Enter task details"
-            rows="4"
-            required
-          />
-
-          <label htmlFor="status">Status</label>
-          <select id="status" name="status" value={form.status} onChange={handleChange}>
-            {statuses.map((status) => (
-              <option key={status} value={status}>
-                {status}
-              </option>
-            ))}
-          </select>
-
-          <button type="submit" disabled={saving}>
-            {saving ? "Adding..." : "Add Task"}
-          </button>
-        </form>
-
-        <section className="tasksPanel">
-          <div className="panelTop">
-            <h2>All Tasks</h2>
-            <button className="ghostButton" type="button" onClick={fetchTasks}>
-              Refresh
-            </button>
-          </div>
-
-          {error && <p className="error">{error}</p>}
-          {loading && <p className="empty">Loading tasks...</p>}
-
-          {!loading && tasks.length === 0 && (
-            <p className="empty">No tasks yet. Add your first task from the form.</p>
-          )}
-
-          <div className="taskList">
-            {tasks.map((task) => (
-              <article className="taskCard" key={task.id}>
-                <div className="taskContent">
-                  <span className={`status ${task.status.replaceAll(" ", "").toLowerCase()}`}>
-                    {task.status}
-                  </span>
-                  <h3>{task.title}</h3>
-                  <p>{task.description}</p>
-                </div>
-
-                <div className="taskActions">
-                  <select
-                    value={task.status}
-                    onChange={(event) => changeStatus(task.id, event.target.value)}
-                    aria-label={`Update status for ${task.title}`}
-                  >
-                    {statuses.map((status) => (
-                      <option key={status} value={status}>
-                        {status}
-                      </option>
-                    ))}
-                  </select>
-
-                  <button className="deleteButton" type="button" onClick={() => deleteTask(task.id)}>
-                    Delete
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
+        <TaskForm form={form} saving={saving} onChange={handleChange} onSubmit={handleSubmit} />
+        <TaskList
+          tasks={tasks}
+          loading={loading}
+          error={error}
+          onRefresh={fetchTasks}
+          onStatusChange={changeStatus}
+          onDelete={deleteTask}
+        />
       </section>
     </main>
   );
