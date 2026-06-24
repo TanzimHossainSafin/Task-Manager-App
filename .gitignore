@@ -4,3 +4,4 @@ dist
 backend/.env
 .DS_Store
 .task.md
+task.md
