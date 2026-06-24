@@ -1,5 +1,7 @@
 const { Pool } = require("pg");
-require("dotenv").config({ path: "backend/.env" });
+const dotenv = require("dotenv");
+
+dotenv.config({ path: "backend/.env" });
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -7,6 +9,8 @@ const pool = new Pool({
     rejectUnauthorized: false
   }
 });
+
+let databaseReady;
 
 const initializeDatabase = async () => {
   await pool.query(`
@@ -22,7 +26,16 @@ const initializeDatabase = async () => {
   `);
 };
 
+const ensureDatabaseReady = async () => {
+  if (!databaseReady) {
+    databaseReady = initializeDatabase();
+  }
+
+  return databaseReady;
+};
+
 module.exports = {
   pool,
-  initializeDatabase
+  initializeDatabase,
+  ensureDatabaseReady
 };

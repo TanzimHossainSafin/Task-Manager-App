@@ -62,6 +62,14 @@ The API runs at:
 http://localhost:5001/api/tasks
 ```
 
+## Deploying To Vercel
+
+- Import the repo into Vercel as a Git project.
+- Set the `DATABASE_URL` environment variable in Vercel to your Neon connection string.
+- Deploy with the default build command, which runs `npm run build`.
+- The frontend is served from the Vercel build output, and the API is exposed through `/api/*`.
+- The same frontend code works in production because it calls `/api/tasks` with Axios.
+
 ## API Endpoints
 
 | Method | Endpoint | Purpose |
